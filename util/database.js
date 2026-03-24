@@ -1,10 +1,14 @@
-﻿const mysql = require('mysql2');
+const Sequelize = require('sequelize');
 
-const pool = mysql.createPool({
-	host: process.env.DB_HOST || 'localhost',
-	user: process.env.DB_USER || 'root',
-	database: process.env.DB_NAME,
-	password: process.env.DB_PASSWORD
-});
+const sequelize = new Sequelize(
+  process.env.DB_NAME || 'node_complete',
+  process.env.DB_USER || 'root',
+  process.env.DB_PASSWORD || '',
+  {
+    dialect: 'mysql',
+    host: process.env.DB_HOST || 'localhost',
+    port: Number(process.env.DB_PORT) || 3306
+  }
+);
 
-module.exports = pool.promise();
+module.exports = sequelize;

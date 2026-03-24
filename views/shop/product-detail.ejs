@@ -1,4 +1,4 @@
-﻿<%- include('../includes/head.ejs') %>
+<%- include('../includes/head.ejs') %>
 <%- include('../includes/navigation.ejs') %>
 
 <main>
@@ -11,10 +11,7 @@
     <h2>$<%= Number(product.price).toFixed(2) %></h2>
     <p><%= product.description %></p>
 
-    <form action="/cart" method="POST">
-      <button class="btn" type="submit">Add to Cart</button>
-      <input type="hidden" name="productId" value="<%= product.id %>" />
-    </form>
+    <%- include('../includes/add-to-cart.ejs', { product: product }) %>
   </div>
 </main>
 

@@ -1,4 +1,4 @@
-﻿<%- include('../includes/head.ejs') %>
+<%- include('../includes/head.ejs') %>
 <%- include('../includes/navigation.ejs') %>
 
 <main>
@@ -19,10 +19,7 @@
             </div>
             <div class="card__actions">
               <a href="/products/<%= p.id %>" class="btn">Details</a>
-              <form action="/cart" method="POST">
-                <button class="btn" type="submit">Add to Cart</button>
-                <input type="hidden" name="productId" value="<%= p.id %>" />
-              </form>
+              <%- include('../includes/add-to-cart.ejs', { product: p }) %>
             </div>
           </article>
         </li>
