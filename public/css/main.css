@@ -1,0 +1,129 @@
+﻿:root {
+  --brand: #00695c;
+  --brand-dark: #004d40;
+  --accent: #ffeb3b;
+  --bg: #f6f7f9;
+  --text: #1f2937;
+  --danger: #b71c1c;
+  --danger-dark: #8f1010;
+  --border: #d1d5db;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+}
+
+main {
+  width: min(1180px, 100% - 2rem);
+  margin: 1.75rem auto;
+}
+
+h1,
+h2,
+h3 {
+  margin-top: 0;
+}
+
+.centered {
+  text-align: center;
+}
+
+.main-header {
+  width: 100%;
+  min-height: 3.75rem;
+  background: linear-gradient(90deg, var(--brand), var(--brand-dark));
+  padding: 0.5rem 1.25rem;
+}
+
+.main-header__nav {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.main-header__item-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.main-header__item a {
+  text-decoration: none;
+  color: #fff;
+  font-weight: 600;
+  padding: 0.35rem 0.45rem;
+  border-radius: 0.35rem;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.main-header__item a:hover,
+.main-header__item a:active,
+.main-header__item a.active {
+  color: #111827;
+  background-color: var(--accent);
+}
+
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1rem;
+  text-decoration: none;
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid var(--brand);
+  color: var(--brand);
+  background: #fff;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn:hover,
+.btn:active {
+  background-color: var(--brand);
+  color: #fff;
+}
+
+.btn.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn.danger:hover,
+.btn.danger:active {
+  background-color: var(--danger-dark);
+  border-color: var(--danger-dark);
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  main {
+    width: min(1180px, 100% - 1rem);
+    margin: 1rem auto;
+  }
+}

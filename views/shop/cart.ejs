@@ -1,0 +1,26 @@
+﻿<%- include('../includes/head.ejs') %>
+<%- include('../includes/navigation.ejs') %>
+
+<main class="centered">
+  <h1>Your Cart</h1>
+
+  <% if (products.length > 0) { %>
+    <ul class="cart__item-list">
+      <% for (const p of products) { %>
+        <li class="cart__item">
+          <h2><%= p.title %> (<%= p.quantity %> x $<%= Number(p.price).toFixed(2) %>)</h2>
+          <form action="/cart-delete-item" method="POST">
+            <input type="hidden" value="<%= p.id %>" name="productId" />
+            <button class="btn danger" type="submit">Delete</button>
+          </form>
+        </li>
+      <% } %>
+    </ul>
+
+    <h2>Total: $<%= Number(totalPrice).toFixed(2) %></h2>
+  <% } else { %>
+    <h2>No Products in Cart!</h2>
+  <% } %>
+</main>
+
+<%- include('../includes/end.ejs') %>

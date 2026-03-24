@@ -1,0 +1,36 @@
+﻿<%- include('../includes/head.ejs') %>
+<%- include('../includes/navigation.ejs') %>
+
+<main>
+  <% if (prods.length > 0) { %>
+    <ul class="grid">
+      <% for (const p of prods) { %>
+        <li>
+          <article class="card product-item">
+            <header class="card__header">
+              <h1 class="product__title"><%= p.title %></h1>
+            </header>
+            <div class="card__image">
+              <img src="<%= p.imageUrl %>" alt="<%= p.title %>" />
+            </div>
+            <div class="card__content">
+              <h2 class="product__price">$<%= Number(p.price).toFixed(2) %></h2>
+              <p class="product__description"><%= p.description %></p>
+            </div>
+            <div class="card__actions">
+              <a href="/products/<%= p.id %>" class="btn">Details</a>
+              <form action="/cart" method="POST">
+                <button class="btn" type="submit">Add to Cart</button>
+                <input type="hidden" name="productId" value="<%= p.id %>" />
+              </form>
+            </div>
+          </article>
+        </li>
+      <% } %>
+    </ul>
+  <% } else { %>
+    <h1 class="centered">No Products Found!</h1>
+  <% } %>
+</main>
+
+<%- include('../includes/end.ejs') %>

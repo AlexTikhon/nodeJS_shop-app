@@ -1,0 +1,36 @@
+﻿<%- include('../includes/head.ejs') %>
+<%- include('../includes/navigation.ejs') %>
+
+<main class="centered">
+  <h1><%= editing ? 'Edit Product' : 'Add Product' %></h1>
+
+  <form class="product-form" action="<%= editing ? '/admin/edit-product' : '/admin/add-product' %>" method="POST">
+    <% if (editing) { %>
+      <input type="hidden" name="productId" value="<%= product.id %>" />
+    <% } %>
+
+    <div class="form-control">
+      <label for="title">Title</label>
+      <input type="text" id="title" name="title" required value="<%= editing ? product.title : '' %>" />
+    </div>
+
+    <div class="form-control">
+      <label for="imageUrl">Image URL</label>
+      <input type="url" id="imageUrl" name="imageUrl" required value="<%= editing ? product.imageUrl : '' %>" />
+    </div>
+
+    <div class="form-control">
+      <label for="price">Price</label>
+      <input type="number" id="price" name="price" step="0.01" required value="<%= editing ? product.price : '' %>" />
+    </div>
+
+    <div class="form-control">
+      <label for="description">Description</label>
+      <textarea id="description" name="description" rows="4" required><%= editing ? product.description : '' %></textarea>
+    </div>
+
+    <button class="btn" type="submit"><%= editing ? 'Update Product' : 'Add Product' %></button>
+  </form>
+</main>
+
+<%- include('../includes/end.ejs') %>
