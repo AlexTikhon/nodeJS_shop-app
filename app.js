@@ -3,11 +3,11 @@ const path = require('path');
 
 const express = require('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 
 const errorController = require('./controllers/error');
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
-const mongoConnect = require('./util/database').mongoConnect;
 const User = require('./models/user');
 
 const app = express();
@@ -25,6 +25,10 @@ app.use((req, res, next) => {
 
 	User.findById(app.locals.userId)
 		.then((user) => {
+			if (!user) {
+				return next();
+			}
+
 			req.user = user;
 			next();
 		})
@@ -40,22 +44,30 @@ app.use(shopRoutes);
 app.use(errorController.get404);
 
 const port = Number(process.env.PORT) || 3000;
+const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/shop';
 
-mongoConnect(() => {
-	User.findOneByEmail('max@test.com')
-		.then((user) => {
-			if (user) {
-				return user;
+mongoose
+	.connect(mongoUri)
+	.then(() => User.findOne({ email: 'max@test.com' }))
+	.then((user) => {
+		if (user) {
+			return user;
+		}
+
+		const newUser = new User({
+			name: 'Max',
+			email: 'max@test.com',
+			cart: {
+				items: []
 			}
-
-			const newUser = new User('Max', 'max@test.com');
-			return newUser.save().then((result) => User.findById(result.insertedId));
-		})
-		.then((user) => {
-			app.locals.userId = user._id;
-			app.listen(port);
-		})
-		.catch((err) => {
-			console.log(err);
 		});
-});
+
+		return newUser.save();
+	})
+	.then((user) => {
+		app.locals.userId = user._id;
+		app.listen(port);
+	})
+	.catch((err) => {
+		console.log(err);
+	});

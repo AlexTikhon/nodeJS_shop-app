@@ -6,12 +6,12 @@
 
   <% if (products.length > 0) { %>
     <ul class="cart__item-list">
-      <% for (const p of products) { %>
+      <% for (const item of products) { %>
         <li class="cart__item">
-          <h2><%= p.title %></h2>
-          <h2>Quantity: <%= p.quantity %></h2>
+          <h2><%= item.productId.title %></h2>
+          <h2>Quantity: <%= item.quantity %></h2>
           <form action="/cart-delete-item" method="POST">
-            <input type="hidden" value="<%= p._id %>" name="productId" />
+            <input type="hidden" value="<%= item.productId._id %>" name="productId" />
             <button class="btn danger" type="submit">Delete</button>
           </form>
         </li>
