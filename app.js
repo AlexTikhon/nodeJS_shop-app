@@ -6,6 +6,9 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
+const csrf = require('csurf');
+const flash = require('connect-flash');
+const bcrypt = require('bcryptjs');
 
 const errorController = require('./controllers/error');
 const adminRoutes = require('./routes/admin');
@@ -17,6 +20,7 @@ const app = express();
 const port = Number(process.env.PORT) || 3000;
 const mongoUri = process.env.MONGODB_URI;
 const sessionSecret = process.env.SESSION_SECRET;
+const csrfProtection = csrf();
 const store = new MongoDBStore({
 	uri: mongoUri,
 	collection: 'sessions'
@@ -35,9 +39,14 @@ app.use(
 		store
 	})
 );
+app.use(flash());
+app.use(csrfProtection);
 
 app.use((req, res, next) => {
 	res.locals.isAuthenticated = req.session.isLoggedIn || false;
+	res.locals.csrfToken = req.csrfToken();
+	res.locals.errorMessage = req.flash('error')[0];
+	res.locals.successMessage = req.flash('success')[0];
 	next();
 });
 
@@ -72,18 +81,28 @@ mongoose
 	.then(() => User.findOne({ email: 'max@test.com' }))
 	.then((user) => {
 		if (user) {
-			return user;
+			if (user.password) {
+				return user;
+			}
+
+			return bcrypt.hash('secret', 12).then((hashedPassword) => {
+				user.password = hashedPassword;
+				return user.save();
+			});
 		}
 
-		const newUser = new User({
-			name: 'Max',
-			email: 'max@test.com',
-			cart: {
-				items: []
-			}
-		});
+		return bcrypt.hash('secret', 12).then((hashedPassword) => {
+			const newUser = new User({
+				name: 'Max',
+				email: 'max@test.com',
+				password: hashedPassword,
+				cart: {
+					items: []
+				}
+			});
 
-		return newUser.save();
+			return newUser.save();
+		});
 	})
 	.then(() => {
 		app.listen(port);

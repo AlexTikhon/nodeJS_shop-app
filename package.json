@@ -9,8 +9,11 @@
     "dev": "nodemon app.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "body-parser": "^1.20.3",
+    "connect-flash": "^0.1.1",
     "connect-mongodb-session": "^5.0.0",
+    "csurf": "^1.11.0",
     "dotenv": "^16.6.1",
     "ejs": "^3.1.10",
     "express": "^4.21.2",

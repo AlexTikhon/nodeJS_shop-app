@@ -2,6 +2,40 @@
   max-width: 28rem;
 }
 
+.auth-page {
+  max-width: 34rem;
+}
+
+.auth-switch {
+  margin-top: 1rem;
+}
+
+.auth-switch a {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.message-box {
+  width: min(28rem, 100%);
+  margin: 0 auto 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid transparent;
+  text-align: left;
+}
+
+.message-box--error {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+.message-box--success {
+  background: #ecfdf5;
+  border-color: #86efac;
+  color: #166534;
+}
+
 .main-header__item form {
   margin: 0;
 }

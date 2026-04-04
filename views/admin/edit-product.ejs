@@ -5,6 +5,8 @@
   <h1><%= editing ? 'Edit Product' : 'Add Product' %></h1>
 
   <form class="product-form" action="<%= editing ? '/admin/edit-product' : '/admin/add-product' %>" method="POST">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
     <% if (editing) { %>
       <input type="hidden" name="productId" value="<%= product._id %>" />
     <% } %>
