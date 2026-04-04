@@ -2,7 +2,7 @@
 <%- include('../includes/navigation.ejs') %>
 
 <main class="centered auth-page">
-  <h1>Login</h1>
+  <h1>Reset Password</h1>
 
   <% if (errorMessage) { %>
     <div class="message-box message-box--error"><%= errorMessage %></div>
@@ -12,7 +12,7 @@
     <div class="message-box message-box--success"><%= successMessage %></div>
   <% } %>
 
-  <form class="product-form login-form" action="/login" method="POST">
+  <form class="product-form login-form" action="/reset" method="POST">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
     <div class="form-control">
@@ -20,16 +20,8 @@
       <input type="email" name="email" id="email" required />
     </div>
 
-    <div class="form-control">
-      <label for="password">Password</label>
-      <input type="password" name="password" id="password" required />
-    </div>
-
-    <button class="btn" type="submit">Login</button>
+    <button class="btn" type="submit">Send Reset Link</button>
   </form>
-
-  <p class="auth-switch"><a href="/reset">Forgot password?</a></p>
-  <p class="auth-switch">No account yet? <a href="/signup">Create one</a></p>
 </main>
 
 <%- include('../includes/end.ejs') %>

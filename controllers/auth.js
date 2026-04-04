@@ -1,9 +1,11 @@
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const sendgridTransport = require('nodemailer-sendgrid-transport');
 
 const User = require('../models/user');
 
+const appUrl = process.env.APP_URL || 'http://localhost:3000';
 const mailFrom = process.env.MAIL_FROM || 'shop@example.com';
 const transporter = process.env.SENDGRID_API_KEY
   ? nodemailer.createTransport(
@@ -14,6 +16,14 @@ const transporter = process.env.SENDGRID_API_KEY
       })
     )
   : null;
+
+const sendMailIfConfigured = (message) => {
+  if (!transporter) {
+    return Promise.resolve();
+  }
+
+  return transporter.sendMail(message);
+};
 
 exports.getLogin = (req, res) => {
   res.render('auth/login', {
@@ -63,28 +73,19 @@ exports.postSignup = (req, res, next) => {
         })
         .then(() => {
           req.flash('success', 'Account created. You can log in now.');
-
-          if (!transporter) {
-            return res.redirect('/login');
-          }
-
-          return transporter
-            .sendMail({
-              to: email,
-              from: mailFrom,
-              subject: 'Signup succeeded!',
-              html: '<h1>You successfully signed up!</h1>'
-            })
-            .then(() => {
-              res.redirect('/login');
-            })
-            .catch((err) => {
-              console.log(err);
-              res.redirect('/login');
-            });
+          return sendMailIfConfigured({
+            to: email,
+            from: mailFrom,
+            subject: 'Signup succeeded!',
+            html: '<h1>You successfully signed up!</h1>'
+          });
+        })
+        .then(() => {
+          res.redirect('/login');
         });
     })
     .catch((err) => {
+      console.log(err);
       next(err);
     });
 };
@@ -130,4 +131,123 @@ exports.postLogout = (req, res, next) => {
 
     res.redirect('/login');
   });
+};
+
+exports.getReset = (req, res) => {
+  res.render('auth/reset', {
+    path: '/reset',
+    pageTitle: 'Reset Password'
+  });
+};
+
+exports.postReset = (req, res, next) => {
+  crypto.randomBytes(32, (err, buffer) => {
+    if (err) {
+      req.flash('error', 'Could not generate a reset token. Please try again.');
+      return res.redirect('/reset');
+    }
+
+    const token = buffer.toString('hex');
+
+    User.findOne({ email: req.body.email })
+      .then((user) => {
+        if (!user) {
+          req.flash('error', 'No account with that e-mail found.');
+          return res.redirect('/reset');
+        }
+
+        user.resetToken = token;
+        user.resetTokenExpiration = Date.now() + 3600000;
+        return user.save();
+      })
+      .then((user) => {
+        if (!user) {
+          return null;
+        }
+
+        req.flash('success', 'Reset link sent. Check your inbox.');
+        return sendMailIfConfigured({
+          to: user.email,
+          from: mailFrom,
+          subject: 'Password reset',
+          html:
+            '<p>You requested a password reset.</p>' +
+            `<p>Click this <a href="${appUrl}/reset/${token}">link</a> to set a new password.</p>`
+        });
+      })
+      .then(() => {
+        res.redirect('/login');
+      })
+      .catch((error) => {
+        next(error);
+      });
+  });
+};
+
+exports.getNewPassword = (req, res, next) => {
+  const token = req.params.token;
+
+  User.findOne({
+    resetToken: token,
+    resetTokenExpiration: { $gt: Date.now() }
+  })
+    .then((user) => {
+      if (!user) {
+        req.flash('error', 'Reset link is invalid or has expired.');
+        return res.redirect('/reset');
+      }
+
+      res.render('auth/new-password', {
+        path: '/new-password',
+        pageTitle: 'New Password',
+        userId: user._id.toString(),
+        passwordToken: token
+      });
+    })
+    .catch((err) => {
+      next(err);
+    });
+};
+
+exports.postNewPassword = (req, res, next) => {
+  const newPassword = req.body.password;
+  const userId = req.body.userId;
+  const passwordToken = req.body.passwordToken;
+  let resetUser;
+
+  User.findOne({
+    resetToken: passwordToken,
+    resetTokenExpiration: { $gt: Date.now() },
+    _id: userId
+  })
+    .then((user) => {
+      if (!user) {
+        req.flash('error', 'Reset link is invalid or has expired.');
+        return res.redirect('/reset');
+      }
+
+      resetUser = user;
+      return bcrypt.hash(newPassword, 12);
+    })
+    .then((hashedPassword) => {
+      if (!resetUser) {
+        return null;
+      }
+
+      resetUser.password = hashedPassword;
+      resetUser.resetToken = undefined;
+      resetUser.resetTokenExpiration = undefined;
+      return resetUser.save();
+    })
+    .then((result) => {
+      if (!result) {
+        return null;
+      }
+
+      req.flash('success', 'Password updated. You can log in now.');
+      res.redirect('/login');
+    })
+    .catch((err) => {
+      next(err);
+    });
 };
