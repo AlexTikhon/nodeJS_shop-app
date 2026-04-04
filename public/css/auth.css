@@ -1,0 +1,25 @@
+.login-form {
+  max-width: 28rem;
+}
+
+.main-header__item form {
+  margin: 0;
+}
+
+.main-header__item .btn-link {
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.35rem 0.45rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+.main-header__item .btn-link:hover,
+.main-header__item .btn-link:active,
+.main-header__item .btn-link.active {
+  color: #111827;
+  background-color: var(--accent);
+}

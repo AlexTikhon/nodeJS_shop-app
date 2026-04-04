@@ -1,0 +1,22 @@
+<%- include('../includes/head.ejs') %>
+<%- include('../includes/navigation.ejs') %>
+
+<main class="centered">
+  <h1>Login</h1>
+
+  <form class="product-form login-form" action="/login" method="POST">
+    <div class="form-control">
+      <label for="email">E-Mail</label>
+      <input type="email" name="email" id="email" value="max@test.com" readonly />
+    </div>
+
+    <div class="form-control">
+      <label for="password">Password</label>
+      <input type="password" name="password" id="password" value="secret" readonly />
+    </div>
+
+    <button class="btn" type="submit">Login</button>
+  </form>
+</main>
+
+<%- include('../includes/end.ejs') %>
