@@ -17,12 +17,26 @@
 
     <div class="form-control">
       <label for="email">E-Mail</label>
-      <input type="email" name="email" id="email" required />
+      <input
+        class="<%= validationErrors.find(error => error.path === 'email' || error.param === 'email') ? 'invalid' : '' %>"
+        type="email"
+        name="email"
+        id="email"
+        value="<%= oldInput.email %>"
+        required
+      />
     </div>
 
     <div class="form-control">
       <label for="password">Password</label>
-      <input type="password" name="password" id="password" required />
+      <input
+        class="<%= validationErrors.find(error => error.path === 'password' || error.param === 'password') ? 'invalid' : '' %>"
+        type="password"
+        name="password"
+        id="password"
+        value="<%= oldInput.password %>"
+        required
+      />
     </div>
 
     <button class="btn" type="submit">Login</button>

@@ -1,4 +1,4 @@
-﻿.product-form {
+.product-form {
   width: min(38rem, 100%);
   margin: 1rem auto;
   background: #fff;
@@ -34,4 +34,10 @@
 .form-control textarea:focus {
   border-color: #00bfa5;
   outline: 2px solid rgba(0, 191, 165, 0.2);
+}
+
+.form-control input.invalid,
+.form-control textarea.invalid {
+  border-color: #d64545;
+  background: #fff5f5;
 }

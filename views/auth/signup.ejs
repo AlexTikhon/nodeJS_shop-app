@@ -13,22 +13,50 @@
 
     <div class="form-control">
       <label for="name">Name</label>
-      <input type="text" name="name" id="name" required />
+      <input
+        class="<%= validationErrors.find(error => error.path === 'name' || error.param === 'name') ? 'invalid' : '' %>"
+        type="text"
+        name="name"
+        id="name"
+        value="<%= oldInput.name %>"
+        required
+      />
     </div>
 
     <div class="form-control">
       <label for="email">E-Mail</label>
-      <input type="email" name="email" id="email" required />
+      <input
+        class="<%= validationErrors.find(error => error.path === 'email' || error.param === 'email') ? 'invalid' : '' %>"
+        type="email"
+        name="email"
+        id="email"
+        value="<%= oldInput.email %>"
+        required
+      />
     </div>
 
     <div class="form-control">
       <label for="password">Password</label>
-      <input type="password" name="password" id="password" required />
+      <input
+        class="<%= validationErrors.find(error => error.path === 'password' || error.param === 'password') ? 'invalid' : '' %>"
+        type="password"
+        name="password"
+        id="password"
+        value="<%= oldInput.password %>"
+        required
+      />
     </div>
 
     <div class="form-control">
       <label for="confirmPassword">Confirm Password</label>
-      <input type="password" name="confirmPassword" id="confirmPassword" required />
+      <input
+        class="<%= validationErrors.find(error => error.path === 'confirmPassword' || error.param === 'confirmPassword') ? 'invalid' : '' %>"
+        type="password"
+        name="confirmPassword"
+        id="confirmPassword"
+        value="<%= oldInput.confirmPassword %>"
+        required
+      />
     </div>
 
     <button class="btn" type="submit">Create Account</button>

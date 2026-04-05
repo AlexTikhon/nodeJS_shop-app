@@ -4,6 +4,10 @@
 <main class="centered">
   <h1><%= editing ? 'Edit Product' : 'Add Product' %></h1>
 
+  <% if (errorMessage) { %>
+    <div class="message-box message-box--error"><%= errorMessage %></div>
+  <% } %>
+
   <form class="product-form" action="<%= editing ? '/admin/edit-product' : '/admin/add-product' %>" method="POST">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
@@ -13,22 +17,50 @@
 
     <div class="form-control">
       <label for="title">Title</label>
-      <input type="text" id="title" name="title" required value="<%= editing ? product.title : '' %>" />
+      <input
+        class="<%= validationErrors.find(error => error.path === 'title' || error.param === 'title') ? 'invalid' : '' %>"
+        type="text"
+        id="title"
+        name="title"
+        required
+        value="<%= product.title %>"
+      />
     </div>
 
     <div class="form-control">
       <label for="imageUrl">Image URL</label>
-      <input type="url" id="imageUrl" name="imageUrl" required value="<%= editing ? product.imageUrl : '' %>" />
+      <input
+        class="<%= validationErrors.find(error => error.path === 'imageUrl' || error.param === 'imageUrl') ? 'invalid' : '' %>"
+        type="url"
+        id="imageUrl"
+        name="imageUrl"
+        required
+        value="<%= product.imageUrl %>"
+      />
     </div>
 
     <div class="form-control">
       <label for="price">Price</label>
-      <input type="number" id="price" name="price" step="0.01" required value="<%= editing ? product.price : '' %>" />
+      <input
+        class="<%= validationErrors.find(error => error.path === 'price' || error.param === 'price') ? 'invalid' : '' %>"
+        type="number"
+        id="price"
+        name="price"
+        step="0.01"
+        required
+        value="<%= product.price %>"
+      />
     </div>
 
     <div class="form-control">
       <label for="description">Description</label>
-      <textarea id="description" name="description" rows="4" required><%= editing ? product.description : '' %></textarea>
+      <textarea
+        class="<%= validationErrors.find(error => error.path === 'description' || error.param === 'description') ? 'invalid' : '' %>"
+        id="description"
+        name="description"
+        rows="4"
+        required
+      ><%= product.description %></textarea>
     </div>
 
     <button class="btn" type="submit"><%= editing ? 'Update Product' : 'Add Product' %></button>
