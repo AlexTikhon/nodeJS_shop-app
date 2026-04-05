@@ -43,6 +43,17 @@ router.post(
 );
 router.post('/create-order', isAuth, shopController.postOrder);
 router.get('/orders', isAuth, shopController.getOrders);
+router.get(
+  '/orders/:orderId',
+  isAuth,
+  [
+    param('orderId')
+      .trim()
+      .isMongoId()
+      .withMessage('Invalid order id.')
+  ],
+  shopController.getInvoice
+);
 router.get('/checkout', isAuth, shopController.getCheckout);
 
 module.exports = router;

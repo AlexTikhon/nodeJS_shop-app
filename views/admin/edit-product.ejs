@@ -8,7 +8,12 @@
     <div class="message-box message-box--error"><%= errorMessage %></div>
   <% } %>
 
-  <form class="product-form" action="<%= editing ? '/admin/edit-product' : '/admin/add-product' %>" method="POST">
+  <form
+    class="product-form"
+    action="<%= editing ? '/admin/edit-product' : '/admin/add-product' %>"
+    method="POST"
+    enctype="multipart/form-data"
+  >
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
     <% if (editing) { %>
@@ -28,15 +33,11 @@
     </div>
 
     <div class="form-control">
-      <label for="imageUrl">Image URL</label>
-      <input
-        class="<%= validationErrors.find(error => error.path === 'imageUrl' || error.param === 'imageUrl') ? 'invalid' : '' %>"
-        type="url"
-        id="imageUrl"
-        name="imageUrl"
-        required
-        value="<%= product.imageUrl %>"
-      />
+      <label for="image">Image</label>
+      <input type="file" id="image" name="image" accept="image/png,image/jpg,image/jpeg" />
+      <% if (editing && product.imageUrl) { %>
+        <p class="form-help">Current image: <a href="<%= product.imageUrl.startsWith('http') ? product.imageUrl : '/' + product.imageUrl %>" target="_blank">open</a></p>
+      <% } %>
     </div>
 
     <div class="form-control">

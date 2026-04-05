@@ -41,3 +41,10 @@
   border-color: #d64545;
   background: #fff5f5;
 }
+
+.form-help {
+  margin: 0.5rem 0 0;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+

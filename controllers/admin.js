@@ -1,5 +1,8 @@
+const path = require('path');
+
 const Product = require('../models/product');
 const { validationResult } = require('express-validator');
+const fileHelper = require('../util/file');
 
 const renderEditProduct = (res, options) => {
   res.status(options.statusCode || 200).render('admin/edit-product', {
@@ -13,46 +16,69 @@ const renderEditProduct = (res, options) => {
   });
 };
 
+const toRelativeImagePath = (filePath) => filePath.split(path.sep).join('/');
+
 exports.getAddProduct = (req, res) => {
   renderEditProduct(res, {
     editing: false,
     product: {
       title: '',
-      imageUrl: '',
       price: '',
-      description: ''
+      description: '',
+      imageUrl: ''
     }
   });
 };
 
 exports.postAddProduct = (req, res, next) => {
   const title = req.body.title;
-  const imageUrl = req.body.imageUrl;
   const price = Number(req.body.price);
   const description = req.body.description;
+  const image = req.file;
   const errors = validationResult(req);
 
-  if (!errors.isEmpty()) {
+  if (!image) {
     return renderEditProduct(res, {
       statusCode: 422,
       editing: false,
       hasError: true,
-      errorMessage: errors.array()[0].msg,
+      errorMessage: 'Please upload a valid image (PNG, JPG, or JPEG).',
       product: {
         title,
-        imageUrl,
         price: req.body.price,
-        description
+        description,
+        imageUrl: ''
       },
       validationErrors: errors.array()
     });
+  }
+
+  if (!errors.isEmpty()) {
+    return fileHelper
+      .deleteFile(image.path)
+      .then(() => {
+        renderEditProduct(res, {
+          statusCode: 422,
+          editing: false,
+          hasError: true,
+          errorMessage: errors.array()[0].msg,
+          product: {
+            title,
+            price: req.body.price,
+            description,
+            imageUrl: ''
+          },
+          validationErrors: errors.array()
+        });
+      })
+      .catch((err) => next(err));
   }
 
   const product = new Product({
     title,
     price,
     description,
-    imageUrl,
+    imageUrl: toRelativeImagePath(image.path),
     userId: req.user
   });
 
@@ -99,41 +125,61 @@ exports.getEditProduct = (req, res, next) => {
 exports.postEditProduct = (req, res, next) => {
   const prodId = req.body.productId;
   const title = req.body.title;
-  const imageUrl = req.body.imageUrl;
   const description = req.body.description;
   const errors = validationResult(req);
+  const image = req.file;
 
   if (!errors.isEmpty()) {
-    return renderEditProduct(res, {
-      statusCode: 422,
-      editing: true,
-      hasError: true,
-      errorMessage: errors.array()[0].msg,
-      product: {
-        _id: prodId,
-        title,
-        imageUrl,
-        price: req.body.price,
-        description
-      },
-      validationErrors: errors.array()
-    });
+    const cleanup = image ? fileHelper.deleteFile(image.path) : Promise.resolve();
+
+    return cleanup
+      .then(() => Product.findOne({ _id: prodId, userId: req.user._id }))
+      .then((product) => {
+        renderEditProduct(res, {
+          statusCode: 422,
+          editing: true,
+          hasError: true,
+          errorMessage: errors.array()[0].msg,
+          product: {
+            _id: prodId,
+            title,
+            price: req.body.price,
+            description,
+            imageUrl: product ? product.imageUrl : ''
+          },
+          validationErrors: errors.array()
+        });
+      })
+      .catch((err) => next(err));
   }
 
   Product.findOne({ _id: prodId, userId: req.user._id })
     .then((product) => {
       if (!product) {
+        if (image) {
+          return fileHelper.deleteFile(image.path).then(() => res.redirect('/admin/products'));
+        }
+
         return res.redirect('/admin/products');
       }
 
+      const oldImageUrl = product.imageUrl;
       product.title = title;
       product.price = Number(req.body.price);
       product.description = description;
-      product.imageUrl = imageUrl;
+
+      if (image) {
+        product.imageUrl = toRelativeImagePath(image.path);
+      }
 
       return product.save().then(() => {
-        res.redirect('/admin/products');
+        if (image && oldImageUrl && oldImageUrl !== product.imageUrl) {
+          return fileHelper.deleteFile(oldImageUrl);
+        }
       });
+    })
+    .then(() => {
+      res.redirect('/admin/products');
     })
     .catch((err) => {
       next(err);
@@ -162,7 +208,16 @@ exports.postDeleteProduct = (req, res, next) => {
     return res.redirect('/admin/products');
   }
 
-  Product.deleteOne({ _id: prodId, userId: req.user._id })
+  Product.findOne({ _id: prodId, userId: req.user._id })
+    .then((product) => {
+      if (!product) {
+        return res.redirect('/admin/products');
+      }
+
+      return fileHelper.deleteFile(product.imageUrl).then(() => {
+        return Product.deleteOne({ _id: prodId, userId: req.user._id });
+      });
+    })
     .then(() => {
       res.redirect('/admin/products');
     })

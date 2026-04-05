@@ -11,10 +11,6 @@ const productValidation = [
     .trim()
     .isLength({ min: 3, max: 100 })
     .withMessage('Please enter a title between 3 and 100 characters.'),
-  body('imageUrl')
-    .trim()
-    .isURL()
-    .withMessage('Please enter a valid image URL.'),
   body('price')
     .isFloat({ gt: 0 })
     .withMessage('Please enter a valid price greater than 0.')

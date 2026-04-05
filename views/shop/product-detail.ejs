@@ -6,7 +6,7 @@
     <h1><%= product.title %></h1>
     <hr />
     <div>
-      <img src="<%= product.imageUrl %>" alt="<%= product.title %>" class="image" />
+      <img src="<%= product.imageUrl.startsWith('http') ? product.imageUrl : '/' + product.imageUrl %>" alt="<%= product.title %>" class="image" />
     </div>
     <h2>$<%= Number(product.price).toFixed(2) %></h2>
     <p><%= product.description %></p>
