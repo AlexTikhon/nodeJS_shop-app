@@ -25,7 +25,7 @@ exports.getAddProduct = (req, res) => {
   });
 };
 
-exports.postAddProduct = (req, res) => {
+exports.postAddProduct = (req, res, next) => {
   const title = req.body.title;
   const imageUrl = req.body.imageUrl;
   const price = Number(req.body.price);
@@ -62,12 +62,11 @@ exports.postAddProduct = (req, res) => {
       res.redirect('/admin/products');
     })
     .catch((err) => {
-      console.log(err);
-      res.redirect('/admin/add-product');
+      next(err);
     });
 };
 
-exports.getEditProduct = (req, res) => {
+exports.getEditProduct = (req, res, next) => {
   const editMode = req.query.edit;
   if (!editMode) {
     return res.redirect('/');
@@ -93,12 +92,11 @@ exports.getEditProduct = (req, res) => {
       });
     })
     .catch((err) => {
-      console.log(err);
-      res.redirect('/admin/products');
+      next(err);
     });
 };
 
-exports.postEditProduct = (req, res) => {
+exports.postEditProduct = (req, res, next) => {
   const prodId = req.body.productId;
   const title = req.body.title;
   const imageUrl = req.body.imageUrl;
@@ -138,12 +136,11 @@ exports.postEditProduct = (req, res) => {
       });
     })
     .catch((err) => {
-      console.log(err);
-      res.redirect('/admin/products');
+      next(err);
     });
 };
 
-exports.getProducts = (req, res) => {
+exports.getProducts = (req, res, next) => {
   Product.find({ userId: req.user._id })
     .then((products) => {
       res.render('admin/products', {
@@ -153,12 +150,11 @@ exports.getProducts = (req, res) => {
       });
     })
     .catch((err) => {
-      console.log(err);
-      res.redirect('/');
+      next(err);
     });
 };
 
-exports.postDeleteProduct = (req, res) => {
+exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
   const errors = validationResult(req);
 
@@ -171,7 +167,6 @@ exports.postDeleteProduct = (req, res) => {
       res.redirect('/admin/products');
     })
     .catch((err) => {
-      console.log(err);
-      res.redirect('/admin/products');
+      next(err);
     });
 };

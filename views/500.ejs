@@ -1,0 +1,10 @@
+<%- include('includes/head.ejs') %>
+<%- include('includes/navigation.ejs') %>
+
+<main class="centered error-page">
+  <h1><%= statusCode === 403 ? 'Access Error' : 'Something Went Wrong' %></h1>
+  <p><%= errorMessage %></p>
+  <p><a class="btn" href="/">Back to shop</a></p>
+</main>
+
+<%- include('includes/end.ejs') %>

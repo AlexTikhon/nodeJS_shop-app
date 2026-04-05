@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --brand: #00695c;
   --brand-dark: #004d40;
   --accent: #ffeb3b;
@@ -37,6 +37,11 @@ h3 {
 
 .centered {
   text-align: center;
+}
+
+.error-page {
+  max-width: 40rem;
+  padding: 2rem 1rem;
 }
 
 .main-header {

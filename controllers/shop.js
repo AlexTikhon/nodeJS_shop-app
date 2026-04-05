@@ -1,7 +1,8 @@
 const Product = require('../models/product');
 const Order = require('../models/order');
+const { validationResult } = require('express-validator');
 
-exports.getProducts = (req, res) => {
+exports.getProducts = (req, res, next) => {
   Product.find()
     .then((products) => {
       res.render('shop/product-list', {
@@ -11,13 +12,17 @@ exports.getProducts = (req, res) => {
       });
     })
     .catch((err) => {
-      console.log(err);
-      res.redirect('/');
+      next(err);
     });
 };
 
-exports.getProduct = (req, res) => {
+exports.getProduct = (req, res, next) => {
   const prodId = req.params.productId;
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.redirect('/products');
+  }
 
   Product.findById(prodId)
     .then((product) => {
@@ -32,12 +37,11 @@ exports.getProduct = (req, res) => {
       });
     })
     .catch((err) => {
-      console.log(err);
-      res.redirect('/products');
+      next(err);
     });
 };
 
-exports.getIndex = (req, res) => {
+exports.getIndex = (req, res, next) => {
   Product.find()
     .then((products) => {
       res.render('shop/index', {
@@ -47,16 +51,15 @@ exports.getIndex = (req, res) => {
       });
     })
     .catch((err) => {
-      console.log(err);
-      res.redirect('/products');
+      next(err);
     });
 };
 
-exports.getCart = (req, res) => {
+exports.getCart = (req, res, next) => {
   req.user
     .populate('cart.items.productId')
     .then((user) => {
-      const products = user.cart.items;
+      const products = user.cart.items.filter((item) => item.productId);
       const totalPrice = products.reduce(
         (sum, item) => sum + Number(item.productId.price) * item.quantity,
         0
@@ -70,13 +73,17 @@ exports.getCart = (req, res) => {
       });
     })
     .catch((err) => {
-      console.log(err);
-      res.redirect('/products');
+      next(err);
     });
 };
 
-exports.postCart = (req, res) => {
+exports.postCart = (req, res, next) => {
   const prodId = req.body.productId;
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.redirect('/products');
+  }
 
   Product.findById(prodId)
     .then((product) => {
@@ -94,13 +101,17 @@ exports.postCart = (req, res) => {
       res.redirect('/cart');
     })
     .catch((err) => {
-      console.log(err);
-      res.redirect('/products');
+      next(err);
     });
 };
 
-exports.postCartDeleteProduct = (req, res) => {
+exports.postCartDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.redirect('/cart');
+  }
 
   req.user
     .removeFromCart(prodId)
@@ -108,21 +119,22 @@ exports.postCartDeleteProduct = (req, res) => {
       res.redirect('/cart');
     })
     .catch((err) => {
-      console.log(err);
-      res.redirect('/cart');
+      next(err);
     });
 };
 
-exports.postOrder = (req, res) => {
+exports.postOrder = (req, res, next) => {
   req.user
     .populate('cart.items.productId')
     .then((user) => {
-      const products = user.cart.items.map((item) => {
-        return {
-          quantity: item.quantity,
-          product: { ...item.productId._doc }
-        };
-      });
+      const products = user.cart.items
+        .filter((item) => item.productId)
+        .map((item) => {
+          return {
+            quantity: item.quantity,
+            product: { ...item.productId._doc }
+          };
+        });
 
       const order = new Order({
         user: {
@@ -141,12 +153,11 @@ exports.postOrder = (req, res) => {
       res.redirect('/orders');
     })
     .catch((err) => {
-      console.log(err);
-      res.redirect('/cart');
+      next(err);
     });
 };
 
-exports.getOrders = (req, res) => {
+exports.getOrders = (req, res, next) => {
   Order.find({ 'user.userId': req.user._id })
     .then((orders) => {
       res.render('shop/orders', {
@@ -156,8 +167,7 @@ exports.getOrders = (req, res) => {
       });
     })
     .catch((err) => {
-      console.log(err);
-      res.redirect('/cart');
+      next(err);
     });
 };
 

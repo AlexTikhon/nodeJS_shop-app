@@ -100,7 +100,6 @@ exports.postSignup = (req, res, next) => {
       res.redirect('/login');
     })
     .catch((err) => {
-      console.log(err);
       next(err);
     });
 };
@@ -188,8 +187,7 @@ exports.getReset = (req, res) => {
 exports.postReset = (req, res, next) => {
   crypto.randomBytes(32, (err, buffer) => {
     if (err) {
-      req.flash('error', 'Could not generate a reset token. Please try again.');
-      return res.redirect('/reset');
+      return next(err);
     }
 
     const token = buffer.toString('hex');
