@@ -8,7 +8,6 @@ const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
 const csrf = require('csurf');
 const flash = require('connect-flash');
-const bcrypt = require('bcryptjs');
 const multer = require('multer');
 
 const errorController = require('./controllers/error');
@@ -133,32 +132,6 @@ app.use(errorController.get500);
 
 mongoose
   .connect(mongoUri)
-  .then(() => User.findOne({ email: 'max@test.com' }))
-  .then((user) => {
-    if (user) {
-      if (user.password) {
-        return user;
-      }
-
-      return bcrypt.hash('secret', 12).then((hashedPassword) => {
-        user.password = hashedPassword;
-        return user.save();
-      });
-    }
-
-    return bcrypt.hash('secret', 12).then((hashedPassword) => {
-      const newUser = new User({
-        name: 'Max',
-        email: 'max@test.com',
-        password: hashedPassword,
-        cart: {
-          items: []
-        }
-      });
-
-      return newUser.save();
-    });
-  })
   .then(() => {
     app.listen(port);
   })
