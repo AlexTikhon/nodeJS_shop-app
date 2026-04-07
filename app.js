@@ -14,6 +14,7 @@ const multer = require('multer');
 const errorController = require('./controllers/error');
 const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/auth');
+const shopController = require('./controllers/shop');
 const shopRoutes = require('./routes/shop');
 const User = require('./models/user');
 
@@ -53,6 +54,7 @@ store.on('error', (err) => {
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
+app.post('/stripe-webhook', express.raw({ type: 'application/json' }), shopController.postStripeWebhook);
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(multer({ storage: fileStorage, fileFilter }).single('image'));

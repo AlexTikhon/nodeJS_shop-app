@@ -5,11 +5,13 @@ const Stripe = require('stripe');
 
 const Product = require('../models/product');
 const Order = require('../models/order');
+const User = require('../models/user');
 const { validationResult } = require('express-validator');
 
 const ITEMS_PER_PAGE = 6;
 const appUrl = process.env.APP_URL || 'http://localhost:3000';
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 
 // Normalize the requested page number and fall back to page 1 for invalid input.
 const parsePage = (page) => {
@@ -126,6 +128,36 @@ const createOrderFromStripeSession = (user, session, lineItems) => {
   });
 
   return order.save().then(() => user.clearCart());
+};
+
+// Create a local order from a completed Stripe session only once.
+const syncStripeOrder = async (session) => {
+  if (!session || session.payment_status !== 'paid') {
+    return false;
+  }
+
+  const existingOrder = await Order.findOne({ stripeCheckoutSessionId: session.id });
+  if (existingOrder) {
+    return false;
+  }
+
+  const userId = session.metadata && session.metadata.userId;
+  if (!userId) {
+    const error = new Error('Stripe session is missing user metadata.');
+    error.httpStatusCode = 400;
+    throw error;
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    const error = new Error('User for Stripe session not found.');
+    error.httpStatusCode = 404;
+    throw error;
+  }
+
+  const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 100 });
+  await createOrderFromStripeSession(user, session, lineItems);
+  return true;
 };
 
 // Render the paginated product catalog page.
@@ -397,7 +429,45 @@ exports.postCreateCheckoutSession = (req, res, next) => {
     });
 };
 
-// Verify the Stripe session, avoid duplicates, and create the paid order.
+// Accept Stripe webhook events and finalize paid orders on the server side.
+exports.postStripeWebhook = (req, res, next) => {
+  if (!stripe || !stripeWebhookSecret) {
+    return res.status(400).send('Stripe webhook is not configured.');
+  }
+
+  const signature = req.headers['stripe-signature'];
+  if (!signature) {
+    return res.status(400).send('Missing Stripe signature.');
+  }
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, signature, stripeWebhookSecret);
+  } catch (err) {
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  Promise.resolve()
+    .then(() => {
+      if (
+        event.type === 'checkout.session.completed' ||
+        event.type === 'checkout.session.async_payment_succeeded'
+      ) {
+        return syncStripeOrder(event.data.object);
+      }
+
+      return null;
+    })
+    .then(() => {
+      res.status(200).json({ received: true });
+    })
+    .catch((err) => {
+      next(err);
+    });
+};
+
+// Verify the Stripe session and send the user to the orders page.
 exports.getCheckoutSuccess = async (req, res, next) => {
   if (!stripe) {
     req.flash('error', 'Stripe is not configured yet.');
@@ -426,14 +496,11 @@ exports.getCheckoutSuccess = async (req, res, next) => {
 
     const existingOrder = await Order.findOne({ stripeCheckoutSessionId: session.id });
     if (existingOrder) {
-      req.flash('success', 'Payment confirmed. Your order is already available below.');
+      req.flash('success', 'Payment confirmed. Your order is available below.');
       return res.redirect('/orders');
     }
 
-    const lineItems = await stripe.checkout.sessions.listLineItems(sessionId, { limit: 100 });
-    await createOrderFromStripeSession(req.user, session, lineItems);
-
-    req.flash('success', 'Payment successful. Your order has been created.');
+    req.flash('success', 'Payment confirmed. We are finalizing your order now.');
     res.redirect('/orders');
   } catch (err) {
     next(err);
