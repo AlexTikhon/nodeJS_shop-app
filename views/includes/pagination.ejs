@@ -1,0 +1,23 @@
+<% if (pagination && pagination.totalPages > 1) { %>
+  <nav class="pagination" aria-label="Pagination">
+    <% if (pagination.hasPreviousPage) { %>
+      <a class="pagination__link" href="<%= basePath %>?page=<%= pagination.previousPage %>">Prev</a>
+    <% } %>
+
+    <% pagination.pages.forEach(item => { %>
+      <% if (item.type === 'ellipsis') { %>
+        <span class="pagination__ellipsis" aria-hidden="true">...</span>
+      <% } else { %>
+        <a
+          class="pagination__link <%= item.value === pagination.currentPage ? 'pagination__link--active' : '' %>"
+          href="<%= basePath %>?page=<%= item.value %>"
+          <%= item.value === pagination.currentPage ? 'aria-current="page"' : '' %>
+        ><%= item.value %></a>
+      <% } %>
+    <% }) %>
+
+    <% if (pagination.hasNextPage) { %>
+      <a class="pagination__link" href="<%= basePath %>?page=<%= pagination.nextPage %>">Next</a>
+    <% } %>
+  </nav>
+<% } %>

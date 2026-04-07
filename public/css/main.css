@@ -91,6 +91,50 @@ h3 {
   gap: 1.25rem;
 }
 
+.pagination {
+  margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pagination__link,
+.pagination__ellipsis {
+  min-width: 2.75rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 999px;
+  text-align: center;
+}
+
+.pagination__link {
+  text-decoration: none;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.pagination__link:hover,
+.pagination__link:active {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.pagination__link--active,
+.pagination__link--active:hover,
+.pagination__link--active:active {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+
+.pagination__ellipsis {
+  color: #6b7280;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;

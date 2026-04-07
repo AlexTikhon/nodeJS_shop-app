@@ -25,6 +25,7 @@
         </li>
       <% } %>
     </ul>
+    <%- include('../includes/pagination.ejs', { pagination, basePath: '/' }) %>
   <% } else { %>
     <h1 class="centered">No Products Found!</h1>
   <% } %>

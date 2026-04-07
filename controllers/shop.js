@@ -6,18 +6,81 @@ const Product = require('../models/product');
 const Order = require('../models/order');
 const { validationResult } = require('express-validator');
 
-exports.getProducts = (req, res, next) => {
-  Product.find()
-    .then((products) => {
-      res.render('shop/product-list', {
+const ITEMS_PER_PAGE = 6;
+
+const parsePage = (page) => {
+  const parsedPage = Number.parseInt(page, 10);
+
+  if (!Number.isInteger(parsedPage) || parsedPage < 1) {
+    return 1;
+  }
+
+  return parsedPage;
+};
+
+const buildPageButtons = (currentPage, totalPages) => {
+  if (totalPages <= 1) {
+    return [];
+  }
+
+  const pages = [];
+  const visiblePages = new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+  const sortedPages = [...visiblePages]
+    .filter((page) => page >= 1 && page <= totalPages)
+    .sort((a, b) => a - b);
+
+  sortedPages.forEach((page, index) => {
+    const previousPage = sortedPages[index - 1];
+
+    if (index > 0 && page - previousPage > 1) {
+      pages.push({ type: 'ellipsis', value: `ellipsis-${previousPage}-${page}` });
+    }
+
+    pages.push({ type: 'page', value: page });
+  });
+
+  return pages;
+};
+
+const renderProductPage = (req, res, next, view, pageTitle, pathValue) => {
+  const requestedPage = parsePage(req.query.page);
+  let totalItems = 0;
+
+  Product.countDocuments()
+    .then((count) => {
+      totalItems = count;
+
+      const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+      const currentPage = Math.min(requestedPage, totalPages);
+
+      return Product.find()
+        .skip((currentPage - 1) * ITEMS_PER_PAGE)
+        .limit(ITEMS_PER_PAGE)
+        .then((products) => ({ products, currentPage, totalPages }));
+    })
+    .then(({ products, currentPage, totalPages }) => {
+      res.render(view, {
         prods: products,
-        pageTitle: 'All Products',
-        path: '/products'
+        pageTitle,
+        path: pathValue,
+        pagination: {
+          currentPage,
+          totalPages,
+          hasPreviousPage: currentPage > 1,
+          hasNextPage: currentPage < totalPages,
+          previousPage: currentPage - 1,
+          nextPage: currentPage + 1,
+          pages: buildPageButtons(currentPage, totalPages)
+        }
       });
     })
     .catch((err) => {
       next(err);
     });
+};
+
+exports.getProducts = (req, res, next) => {
+  renderProductPage(req, res, next, 'shop/product-list', 'All Products', '/products');
 };
 
 exports.getProduct = (req, res, next) => {
@@ -46,17 +109,7 @@ exports.getProduct = (req, res, next) => {
 };
 
 exports.getIndex = (req, res, next) => {
-  Product.find()
-    .then((products) => {
-      res.render('shop/index', {
-        prods: products,
-        pageTitle: 'Shop',
-        path: '/'
-      });
-    })
-    .catch((err) => {
-      next(err);
-    });
+  renderProductPage(req, res, next, 'shop/index', 'Shop', '/');
 };
 
 exports.getCart = (req, res, next) => {
