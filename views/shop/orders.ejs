@@ -2,6 +2,14 @@
 <%- include('../includes/navigation.ejs') %>
 
 <main>
+  <% if (errorMessage) { %>
+    <div class="message-box message-box--error"><%= errorMessage %></div>
+  <% } %>
+
+  <% if (successMessage) { %>
+    <div class="message-box message-box--success"><%= successMessage %></div>
+  <% } %>
+
   <% if (orders.length <= 0) { %>
     <h1>Nothing there!</h1>
   <% } else { %>

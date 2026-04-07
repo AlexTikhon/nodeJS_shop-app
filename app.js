@@ -37,6 +37,7 @@ const fileStorage = multer.diskStorage({
   }
 });
 
+// Accept only supported image formats for product uploads.
 const fileFilter = (req, file, cb) => {
   if (file.mimetype === 'image/png' || file.mimetype === 'image/jpg' || file.mimetype === 'image/jpeg') {
     cb(null, true);
@@ -162,4 +163,3 @@ mongoose
   .catch((err) => {
     console.error('Application startup failed:', err);
   });
-

@@ -1,13 +1,17 @@
 const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
+const Stripe = require('stripe');
 
 const Product = require('../models/product');
 const Order = require('../models/order');
 const { validationResult } = require('express-validator');
 
 const ITEMS_PER_PAGE = 6;
+const appUrl = process.env.APP_URL || 'http://localhost:3000';
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
+// Normalize the requested page number and fall back to page 1 for invalid input.
 const parsePage = (page) => {
   const parsedPage = Number.parseInt(page, 10);
 
@@ -18,6 +22,7 @@ const parsePage = (page) => {
   return parsedPage;
 };
 
+// Build the visible pagination model including ellipsis placeholders.
 const buildPageButtons = (currentPage, totalPages) => {
   if (totalPages <= 1) {
     return [];
@@ -42,6 +47,7 @@ const buildPageButtons = (currentPage, totalPages) => {
   return pages;
 };
 
+// Render a paginated product listing for the shop home or catalog page.
 const renderProductPage = (req, res, next, view, pageTitle, pathValue) => {
   const requestedPage = parsePage(req.query.page);
   let totalItems = 0;
@@ -79,10 +85,55 @@ const renderProductPage = (req, res, next, view, pageTitle, pathValue) => {
     });
 };
 
+// Populate the cart with products and calculate the current total.
+const getCartSummary = (user) => {
+  return user.populate('cart.items.productId').then((populatedUser) => {
+    const products = populatedUser.cart.items.filter((item) => item.productId);
+    const totalPrice = products.reduce(
+      (sum, item) => sum + Number(item.productId.price) * item.quantity,
+      0
+    );
+
+    return {
+      products,
+      totalPrice
+    };
+  });
+};
+
+// Convert a paid Stripe Checkout session into a local order snapshot.
+const createOrderFromStripeSession = (user, session, lineItems) => {
+  const products = lineItems.data.map((item) => {
+    const quantity = item.quantity || 1;
+    const unitAmount = typeof item.amount_total === 'number' ? item.amount_total / quantity : 0;
+
+    return {
+      quantity,
+      product: {
+        title: item.description,
+        price: unitAmount / 100
+      }
+    };
+  });
+
+  const order = new Order({
+    products,
+    user: {
+      name: user.name,
+      userId: user
+    },
+    stripeCheckoutSessionId: session.id
+  });
+
+  return order.save().then(() => user.clearCart());
+};
+
+// Render the paginated product catalog page.
 exports.getProducts = (req, res, next) => {
   renderProductPage(req, res, next, 'shop/product-list', 'All Products', '/products');
 };
 
+// Render the product detail page for one valid product id.
 exports.getProduct = (req, res, next) => {
   const prodId = req.params.productId;
   const errors = validationResult(req);
@@ -108,20 +159,15 @@ exports.getProduct = (req, res, next) => {
     });
 };
 
+// Render the paginated shop landing page.
 exports.getIndex = (req, res, next) => {
   renderProductPage(req, res, next, 'shop/index', 'Shop', '/');
 };
 
+// Render the current user's cart with populated product data.
 exports.getCart = (req, res, next) => {
-  req.user
-    .populate('cart.items.productId')
-    .then((user) => {
-      const products = user.cart.items.filter((item) => item.productId);
-      const totalPrice = products.reduce(
-        (sum, item) => sum + Number(item.productId.price) * item.quantity,
-        0
-      );
-
+  getCartSummary(req.user)
+    .then(({ products, totalPrice }) => {
       res.render('shop/cart', {
         pageTitle: 'Your Cart',
         path: '/cart',
@@ -134,6 +180,7 @@ exports.getCart = (req, res, next) => {
     });
 };
 
+// Add a product to the cart or increment its quantity.
 exports.postCart = (req, res, next) => {
   const prodId = req.body.productId;
   const errors = validationResult(req);
@@ -162,6 +209,7 @@ exports.postCart = (req, res, next) => {
     });
 };
 
+// Remove a product from the current user's cart.
 exports.postCartDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
   const errors = validationResult(req);
@@ -180,25 +228,23 @@ exports.postCartDeleteProduct = (req, res, next) => {
     });
 };
 
+// Create an order directly from the cart using the existing non-Stripe flow.
 exports.postOrder = (req, res, next) => {
-  req.user
-    .populate('cart.items.productId')
-    .then((user) => {
-      const products = user.cart.items
-        .filter((item) => item.productId)
-        .map((item) => {
-          return {
-            quantity: item.quantity,
-            product: { ...item.productId._doc }
-          };
-        });
+  getCartSummary(req.user)
+    .then(({ products }) => {
+      const orderProducts = products.map((item) => {
+        return {
+          quantity: item.quantity,
+          product: { ...item.productId._doc }
+        };
+      });
 
       const order = new Order({
         user: {
           name: req.user.name,
           userId: req.user
         },
-        products
+        products: orderProducts
       });
 
       return order.save();
@@ -214,6 +260,7 @@ exports.postOrder = (req, res, next) => {
     });
 };
 
+// Render all orders that belong to the current user.
 exports.getOrders = (req, res, next) => {
   Order.find({ 'user.userId': req.user._id })
     .then((orders) => {
@@ -228,6 +275,7 @@ exports.getOrders = (req, res, next) => {
     });
 };
 
+// Generate and stream a PDF invoice for an authorized order.
 exports.getInvoice = (req, res, next) => {
   const orderId = req.params.orderId;
   const errors = validationResult(req);
@@ -278,9 +326,122 @@ exports.getInvoice = (req, res, next) => {
     .catch((err) => next(err));
 };
 
-exports.getCheckout = (req, res) => {
-  res.render('shop/checkout', {
-    pageTitle: 'Checkout',
-    path: '/checkout'
-  });
+// Render the checkout summary page before the Stripe redirect.
+exports.getCheckout = (req, res, next) => {
+  getCartSummary(req.user)
+    .then(({ products, totalPrice }) => {
+      if (products.length === 0) {
+        req.flash('error', 'Add products to your cart before starting checkout.');
+        return res.redirect('/cart');
+      }
+
+      res.render('shop/checkout', {
+        pageTitle: 'Checkout',
+        path: '/checkout',
+        products,
+        totalPrice,
+        stripeEnabled: Boolean(stripe)
+      });
+    })
+    .catch((err) => {
+      next(err);
+    });
+};
+
+// Create a Stripe Checkout session from the current cart contents.
+exports.postCreateCheckoutSession = (req, res, next) => {
+  if (!stripe) {
+    req.flash('error', 'Stripe is not configured yet. Add STRIPE_SECRET_KEY to continue.');
+    return res.redirect('/checkout');
+  }
+
+  getCartSummary(req.user)
+    .then(({ products }) => {
+      if (products.length === 0) {
+        req.flash('error', 'Your cart is empty. Add products before checkout.');
+        return res.redirect('/cart');
+      }
+
+      return stripe.checkout.sessions.create({
+        mode: 'payment',
+        customer_email: req.user.email,
+        metadata: {
+          userId: req.user._id.toString()
+        },
+        success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${appUrl}/checkout/cancel`,
+        line_items: products.map((item) => {
+          return {
+            quantity: item.quantity,
+            price_data: {
+              currency: 'usd',
+              unit_amount: Math.round(Number(item.productId.price) * 100),
+              product_data: {
+                name: item.productId.title,
+                description: item.productId.description
+              }
+            }
+          };
+        })
+      });
+    })
+    .then((session) => {
+      if (!session || !session.url) {
+        return null;
+      }
+
+      res.redirect(303, session.url);
+    })
+    .catch((err) => {
+      next(err);
+    });
+};
+
+// Verify the Stripe session, avoid duplicates, and create the paid order.
+exports.getCheckoutSuccess = async (req, res, next) => {
+  if (!stripe) {
+    req.flash('error', 'Stripe is not configured yet.');
+    return res.redirect('/checkout');
+  }
+
+  const sessionId = req.query.session_id;
+  if (!sessionId) {
+    req.flash('error', 'Stripe checkout session is missing.');
+    return res.redirect('/checkout');
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (!session || session.payment_status !== 'paid') {
+      req.flash('error', 'Payment has not been completed yet.');
+      return res.redirect('/checkout');
+    }
+
+    if (!session.metadata || session.metadata.userId !== req.user._id.toString()) {
+      const error = new Error('Unauthorized');
+      error.httpStatusCode = 403;
+      throw error;
+    }
+
+    const existingOrder = await Order.findOne({ stripeCheckoutSessionId: session.id });
+    if (existingOrder) {
+      req.flash('success', 'Payment confirmed. Your order is already available below.');
+      return res.redirect('/orders');
+    }
+
+    const lineItems = await stripe.checkout.sessions.listLineItems(sessionId, { limit: 100 });
+    await createOrderFromStripeSession(req.user, session, lineItems);
+
+    req.flash('success', 'Payment successful. Your order has been created.');
+    res.redirect('/orders');
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Handle a canceled Stripe checkout and return the user to the summary page.
+exports.getCheckoutCancel = (req, res) => {
+  req.flash('error', 'Stripe checkout was canceled. You can review your cart and try again.');
+  res.redirect('/checkout');
 };

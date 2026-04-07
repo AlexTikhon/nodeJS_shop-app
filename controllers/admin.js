@@ -4,6 +4,7 @@ const Product = require('../models/product');
 const { validationResult } = require('express-validator');
 const fileHelper = require('../util/file');
 
+// Render the shared add/edit product form with a normalized view model.
 const renderEditProduct = (res, options) => {
   res.status(options.statusCode || 200).render('admin/edit-product', {
     pageTitle: options.editing ? 'Edit Product' : 'Add Product',
@@ -16,8 +17,10 @@ const renderEditProduct = (res, options) => {
   });
 };
 
+// Normalize uploaded Windows file paths into URL-friendly relative paths.
 const toRelativeImagePath = (filePath) => filePath.split(path.sep).join('/');
 
+// Delete a product only when it belongs to the current user.
 const deleteOwnedProduct = (prodId, userId) => {
   return Product.findOne({ _id: prodId, userId })
     .then((product) => {
@@ -31,6 +34,7 @@ const deleteOwnedProduct = (prodId, userId) => {
     });
 };
 
+// Render an empty form for creating a new product.
 exports.getAddProduct = (req, res) => {
   renderEditProduct(res, {
     editing: false,
@@ -43,6 +47,7 @@ exports.getAddProduct = (req, res) => {
   });
 };
 
+// Create a new product after validating text fields and image upload.
 exports.postAddProduct = (req, res, next) => {
   const title = req.body.title;
   const price = Number(req.body.price);
@@ -105,6 +110,7 @@ exports.postAddProduct = (req, res, next) => {
     });
 };
 
+// Load the edit form for a product owned by the current user.
 exports.getEditProduct = (req, res, next) => {
   const editMode = req.query.edit;
   if (!editMode) {
@@ -135,6 +141,7 @@ exports.getEditProduct = (req, res, next) => {
     });
 };
 
+// Update an owned product and replace its image when a new file is provided.
 exports.postEditProduct = (req, res, next) => {
   const prodId = req.body.productId;
   const title = req.body.title;
@@ -199,6 +206,7 @@ exports.postEditProduct = (req, res, next) => {
     });
 };
 
+// Render the admin product list for the current user.
 exports.getProducts = (req, res, next) => {
   Product.find({ userId: req.user._id })
     .then((products) => {
@@ -213,6 +221,7 @@ exports.getProducts = (req, res, next) => {
     });
 };
 
+// Delete a product through the async admin fetch flow.
 exports.deleteProduct = (req, res, next) => {
   const prodId = req.params.productId;
   const errors = validationResult(req);
@@ -240,6 +249,7 @@ exports.deleteProduct = (req, res, next) => {
     });
 };
 
+// Delete a product through the classic form-post fallback flow.
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
   const errors = validationResult(req);

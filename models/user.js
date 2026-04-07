@@ -34,6 +34,7 @@ const userSchema = new Schema({
   }
 });
 
+// Add a product to the cart or increase its quantity when it already exists.
 userSchema.methods.addToCart = function (product) {
   const cartProductIndex = this.cart.items.findIndex((item) => {
     return item.productId.toString() === product._id.toString();
@@ -56,6 +57,7 @@ userSchema.methods.addToCart = function (product) {
   return this.save();
 };
 
+// Remove a product entirely from the cart.
 userSchema.methods.removeFromCart = function (productId) {
   const updatedCartItems = this.cart.items.filter((item) => {
     return item.productId.toString() !== productId.toString();
@@ -65,6 +67,7 @@ userSchema.methods.removeFromCart = function (productId) {
   return this.save();
 };
 
+// Clear the cart after an order is completed.
 userSchema.methods.clearCart = function () {
   this.cart = { items: [] };
   return this.save();

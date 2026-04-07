@@ -1,8 +1,47 @@
-﻿<%- include('../includes/head.ejs') %> <%- include('../includes/navigation.ejs')
-%>
+<%- include('../includes/head.ejs') %>
+<%- include('../includes/navigation.ejs') %>
 
-<main class="centered">
+<main class="centered auth-page">
   <h1>Checkout</h1>
+
+  <% if (errorMessage) { %>
+    <div class="message-box message-box--error"><%= errorMessage %></div>
+  <% } %>
+
+  <% if (successMessage) { %>
+    <div class="message-box message-box--success"><%= successMessage %></div>
+  <% } %>
+
+  <div class="message-box message-box--success">
+    Stripe Checkout will open on the next step so payment details stay off our server.
+  </div>
+
+  <section class="checkout-card">
+    <h2>Order Summary</h2>
+
+    <ul class="cart__item-list">
+      <% for (const item of products) { %>
+        <li class="cart__item">
+          <h3><%= item.productId.title %></h3>
+          <p><%= item.quantity %> x $<%= Number(item.productId.price).toFixed(2) %></p>
+        </li>
+      <% } %>
+    </ul>
+
+    <h2>Total: $<%= Number(totalPrice).toFixed(2) %></h2>
+
+    <% if (stripeEnabled) { %>
+      <form action="/create-checkout-session" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit" class="btn">Continue to Stripe</button>
+      </form>
+    <% } else { %>
+      <div class="message-box message-box--error">
+        Stripe is not configured. Add <code>STRIPE_SECRET_KEY</code> to your environment before starting checkout.
+      </div>
+      <a href="/cart" class="btn">Back to Cart</a>
+    <% } %>
+  </section>
 </main>
 
 <%- include('../includes/end.ejs') %>

@@ -55,5 +55,8 @@ router.get(
   shopController.getInvoice
 );
 router.get('/checkout', isAuth, shopController.getCheckout);
+router.post('/create-checkout-session', isAuth, shopController.postCreateCheckoutSession);
+router.get('/checkout/success', isAuth, shopController.getCheckoutSuccess);
+router.get('/checkout/cancel', isAuth, shopController.getCheckoutCancel);
 
 module.exports = router;

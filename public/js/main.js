@@ -1,6 +1,7 @@
 const adminProductsList = document.getElementById('admin-products-list');
 
 if (adminProductsList) {
+  // Replace the list with an empty-state message when the last item is removed.
   const ensureEmptyState = () => {
     if (adminProductsList.children.length > 0) {
       return;

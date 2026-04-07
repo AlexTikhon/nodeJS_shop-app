@@ -1,3 +1,4 @@
+// Render the default not-found page for unmatched routes.
 exports.get404 = (req, res) => {
   res.status(404).render('404', {
     pageTitle: 'Page Not Found',
@@ -5,6 +6,7 @@ exports.get404 = (req, res) => {
   });
 };
 
+// Render the shared error page and map CSRF failures to a friendly 403 response.
 exports.get500 = (error, req, res, next) => {
   console.error(error);
 

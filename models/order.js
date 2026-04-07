@@ -25,6 +25,11 @@ const orderSchema = new Schema({
       ref: 'User',
       required: true
     }
+  },
+  stripeCheckoutSessionId: {
+    type: String,
+    unique: true,
+    sparse: true
   }
 });
 

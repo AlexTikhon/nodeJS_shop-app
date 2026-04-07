@@ -18,6 +18,7 @@ const transporter = process.env.SENDGRID_API_KEY
     )
   : null;
 
+// Send an e-mail only when a transport is configured for the environment.
 const sendMailIfConfigured = (message) => {
   if (!transporter) {
     return Promise.resolve();
@@ -26,6 +27,7 @@ const sendMailIfConfigured = (message) => {
   return transporter.sendMail(message);
 };
 
+// Render the login page with empty defaults.
 exports.getLogin = (req, res) => {
   res.render('auth/login', {
     path: '/login',
@@ -38,6 +40,7 @@ exports.getLogin = (req, res) => {
   });
 };
 
+// Render the signup page with empty defaults.
 exports.getSignup = (req, res) => {
   res.render('auth/signup', {
     path: '/signup',
@@ -52,6 +55,7 @@ exports.getSignup = (req, res) => {
   });
 };
 
+// Create a new user account and optionally send a welcome e-mail.
 exports.postSignup = (req, res, next) => {
   const name = req.body.name;
   const email = req.body.email;
@@ -104,6 +108,7 @@ exports.postSignup = (req, res, next) => {
     });
 };
 
+// Authenticate a user and persist the login state in the session.
 exports.postLogin = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -167,6 +172,7 @@ exports.postLogin = (req, res, next) => {
     });
 };
 
+// Destroy the current session and log the user out.
 exports.postLogout = (req, res, next) => {
   req.session.destroy((err) => {
     if (err) {
@@ -177,6 +183,7 @@ exports.postLogout = (req, res, next) => {
   });
 };
 
+// Render the password reset request page.
 exports.getReset = (req, res) => {
   res.render('auth/reset', {
     path: '/reset',
@@ -184,6 +191,7 @@ exports.getReset = (req, res) => {
   });
 };
 
+// Generate a reset token and send the password reset e-mail.
 exports.postReset = (req, res, next) => {
   crypto.randomBytes(32, (err, buffer) => {
     if (err) {
@@ -227,6 +235,7 @@ exports.postReset = (req, res, next) => {
   });
 };
 
+// Validate a reset token and render the new password form.
 exports.getNewPassword = (req, res, next) => {
   const token = req.params.token;
 
@@ -252,6 +261,7 @@ exports.getNewPassword = (req, res, next) => {
     });
 };
 
+// Persist a new password for a user with a valid reset token.
 exports.postNewPassword = (req, res, next) => {
   const newPassword = req.body.password;
   const userId = req.body.userId;
