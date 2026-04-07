@@ -5,9 +5,9 @@
   <h1 class="centered">Admin Products</h1>
 
   <% if (prods.length > 0) { %>
-    <ul class="grid">
+    <ul class="grid" id="admin-products-list">
       <% for (const p of prods) { %>
-        <li>
+        <li class="product-list-item">
           <article class="card product-item">
             <header class="card__header">
               <h1 class="product__title"><%= p.title %></h1>
@@ -21,7 +21,13 @@
             </div>
             <div class="card__actions">
               <a href="/admin/edit-product/<%= p._id %>?edit=true" class="btn">Edit</a>
-              <form action="/admin/delete-product" method="POST">
+              <form
+                action="/admin/delete-product"
+                method="POST"
+                class="js-delete-product-form"
+                data-product-id="<%= p._id %>"
+                data-csrf="<%= csrfToken %>"
+              >
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <input type="hidden" name="productId" value="<%= p._id %>" />
                 <button class="btn danger" type="submit">Delete</button>
@@ -32,7 +38,7 @@
       <% } %>
     </ul>
   <% } else { %>
-    <h2 class="centered">No products found.</h2>
+    <h2 class="centered" id="admin-products-empty-state">No products found.</h2>
   <% } %>
 </main>
 

@@ -47,6 +47,17 @@ router.post(
   adminController.postEditProduct
 );
 router.get('/products', isAuth, adminController.getProducts);
+router.delete(
+  '/product/:productId',
+  isAuth,
+  [
+    param('productId')
+      .trim()
+      .isMongoId()
+      .withMessage('Invalid product id.')
+  ],
+  adminController.deleteProduct
+);
 router.post(
   '/delete-product',
   isAuth,

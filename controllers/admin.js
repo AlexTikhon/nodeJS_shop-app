@@ -18,6 +18,19 @@ const renderEditProduct = (res, options) => {
 
 const toRelativeImagePath = (filePath) => filePath.split(path.sep).join('/');
 
+const deleteOwnedProduct = (prodId, userId) => {
+  return Product.findOne({ _id: prodId, userId })
+    .then((product) => {
+      if (!product) {
+        return false;
+      }
+
+      return fileHelper.deleteFile(product.imageUrl).then(() => {
+        return Product.deleteOne({ _id: prodId, userId }).then(() => true);
+      });
+    });
+};
+
 exports.getAddProduct = (req, res) => {
   renderEditProduct(res, {
     editing: false,
@@ -200,6 +213,33 @@ exports.getProducts = (req, res, next) => {
     });
 };
 
+exports.deleteProduct = (req, res, next) => {
+  const prodId = req.params.productId;
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(422).json({
+      message: errors.array()[0].msg
+    });
+  }
+
+  deleteOwnedProduct(prodId, req.user._id)
+    .then((deleted) => {
+      if (!deleted) {
+        return res.status(404).json({
+          message: 'Product not found.'
+        });
+      }
+
+      res.status(200).json({
+        message: 'Success!'
+      });
+    })
+    .catch((err) => {
+      next(err);
+    });
+};
+
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
   const errors = validationResult(req);
@@ -208,16 +248,7 @@ exports.postDeleteProduct = (req, res, next) => {
     return res.redirect('/admin/products');
   }
 
-  Product.findOne({ _id: prodId, userId: req.user._id })
-    .then((product) => {
-      if (!product) {
-        return res.redirect('/admin/products');
-      }
-
-      return fileHelper.deleteFile(product.imageUrl).then(() => {
-        return Product.deleteOne({ _id: prodId, userId: req.user._id });
-      });
-    })
+  deleteOwnedProduct(prodId, req.user._id)
     .then(() => {
       res.redirect('/admin/products');
     })

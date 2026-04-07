@@ -52,6 +52,7 @@ store.on('error', (err) => {
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
+app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(multer({ storage: fileStorage, fileFilter }).single('image'));
 app.use('/images', express.static(path.join(__dirname, 'images')));
@@ -161,3 +162,4 @@ mongoose
   .catch((err) => {
     console.error('Application startup failed:', err);
   });
+
